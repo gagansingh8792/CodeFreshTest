@@ -1,0 +1,56 @@
+version: "1.0"
+# Stages can help you organize your steps in stages
+stages:
+  - "clone"
+  - "build"
+  - "push"
+  - "integration test"
+
+steps:
+  clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "gagansingh8792/hello-world"
+    revision: "${{CF_BRANCH}}"
+    git: "github"
+    stage: "clone"
+
+  build:
+    title: "Building Docker image"
+    type: "build"
+    image_name: "gagansingh92/helloworld"
+    working_directory: "${{clone}}"
+    tag: "${{CF_BRANCH_TAG_NORMALIZED}}"
+    dockerfile: "Dockerfile"
+    stage: "build"
+
+  push:
+    type: "push"
+    title: "Pushing to a registry"
+    candidate: "${{build}}"
+    tag: "${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}"
+    registry: "gagansingh92"
+    stage: "push"
+
+  run_integration_tests:
+    title: Integration test
+    stage: 'integration test'
+    image: maven:3.5.2-jdk-8-alpine
+    commands:
+     - mvn -Dmaven.repo.local=/codefresh/volume/m2_repository verify -Dserver.host=http://localhost
+    services:
+       composition:
+        helloworld:
+          image: '${{build_app_image}}'
+          ports:
+            - 8080
+    readiness:
+      timeoutSeconds: 30
+      periodSeconds: 15
+      image: byrnedo/alpine-curl
+      commands:
+        - "curl http://localhost:8080"
+
+
+
+

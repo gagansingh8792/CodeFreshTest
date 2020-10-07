@@ -1,0 +1,40 @@
+version: "1.0"
+stages:
+  - "clone"
+  - "build"
+  - "test"
+  - "push"
+
+steps:
+  clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "gagansingh8792/Project102"
+    revision: "${{CF_BRANCH}}"
+    git: "github"
+    stage: "clone"
+
+  build:
+    title: "Building Docker image"
+    type: "build"
+    image_name: "gagansingh8792/Project102"
+    working_directory: "${{clone}}"
+    dockerfile: "Dockerfile"
+    stage: "build"
+
+  test:
+    title: "Running test"
+    type: "freestyle"
+    image: "ubuntu:latest" 
+    working_directory: "${{clone}}" 
+    commands:
+      - "ls"
+    stage: "test"
+ 
+  push:
+    type: "push"
+    title: "Pushing to a registry"
+    candidate: ${{build}}
+    tag: ${{CF_SHORT_REVISION}}
+    registry: gagansingh92
+    stage: "push"
